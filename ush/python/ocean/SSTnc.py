@@ -67,7 +67,7 @@ if tcid[-1].lower()=='e':
 
 #nan1d=np.nan*np.empty([22,1])
 if trackon[0].lower()=='y':
-   gatcf = glob.glob('*.atcfunix')
+   gatcf = glob.glob(os.path.join(COMOUT,'*.atcfunix'))
    if gatcf:
       trackon='yes'
    else:

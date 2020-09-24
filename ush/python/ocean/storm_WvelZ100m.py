@@ -71,7 +71,7 @@ if tcid[-1].lower()=='c':
    nprefix=model.lower()+tcid.lower()+'.'+cycle+'.hafs_hycom_hcp70'
 
 aprefix=storm.lower()+tcid.lower()+'.'+cycle
-atcf = aprefix+'.trak.'+model.lower()+'.atcfunix'
+atcf = os.path.join(COMOUT,aprefix+'.trak.'+model.lower()+'.atcfunix')
 
 #------------------------------------------------------------------------------------
 # - get Wvel  *_3z_*.[nc] files

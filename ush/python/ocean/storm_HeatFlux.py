@@ -53,19 +53,19 @@ def ZoomIndex(var,aln,alt):
    """
 
    # find an index for the lower-left corner
-   abslat=np.abs(var.latitude-min(alt)-8)
-   abslon=np.abs(var.longitude-min(aln)-8)
+   abslat=np.abs(var.latitude-min(alt)-18)
+   abslon=np.abs(var.longitude-min(aln)-18)
    c=np.maximum(abslon,abslat)
    ([xll],[yll])=np.where(c==np.min(c))
 
    # find an index for the upper-right corner
-   abslon=np.abs(var.longitude-max(aln)+8)
-   abslat=np.abs(var.latitude-max(alt)+8)
+   abslon=np.abs(var.longitude-max(aln)+18)
+   abslat=np.abs(var.latitude-max(alt)+18)
    c=np.maximum(abslon,abslat)
    ([xur],[yur])=np.where(c==np.min(c))
 
-   xindx=np.arange(xll,xur,1)
-   yindx=np.arange(yll,yur,1)
+   xindx=np.arange(min(xll,xur),max(xll,xur),1)
+   yindx=np.arange(min(yll,yur),max(yll,yur),1)
    
    return (xindx,yindx)
     
@@ -98,7 +98,7 @@ if tcid[-1].lower()=='c':
    nprefix=model.lower()+tcid.lower()+'.'+cycle+'.hafs_hycom_hcp70'
 
 aprefix=storm.lower()+tcid.lower()+'.'+cycle
-atcf = aprefix+'.trak.'+model.lower()+'.atcfunix'
+atcf = os.path.join(COMOUT,aprefix+'.trak.'+model.lower()+'.atcfunix')
 
 # ------------------------------------------------------------------------------------
 # - preprocessing: subset and convert wgrib2 to netcdf
@@ -136,7 +136,6 @@ for k,A in enumerate(afiles):
     os.system(cmd)
 
 nfiles=sorted(glob.glob(os.path.join(nctmp,'heatflx_*.nc')))
-del afiles
 
 xnc=xr.open_mfdataset(nfiles)
 xii,yii=ZoomIndex(xnc.isel(time=[0]),aln,alt)
@@ -152,7 +151,7 @@ del xnc
 lns,lts=np.meshgrid(var1['longitude'],var1['latitude'])
 dummy=np.ones(lns.shape)
 
-for k in range(len(aln)):
+for k in range(min(len(aln),len(afiles))):
    dR=haversine(lns,lts,aln[k],alt[k])/1000.0
    dumb=dummy.copy()
    dumb[dR>Rkm]=np.nan

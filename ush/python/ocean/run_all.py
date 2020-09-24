@@ -27,8 +27,8 @@ model='hafs'
 storm='natl'
 tcid='00l'
 trackon='y'
-cycle='2020081306'
-COMhafs='/mnt/lfs1/HFIP/hwrfv3/Role.rthafsa/hafstmp/hafsv0p1acpl_202007/com/2020081306/00L'
+cycle='2020091306'
+COMhafs='/mnt/lfs1/HFIP/hwrfv3/Role.rthafsa/hafstmp/hafsv0p1acpl_202007/com/'+cycle+'/00L'
 graphdir='/lfs1/HFIP/hwrfv3/Hyun.Sook.Kim/hafsv0p1cpl_ocngraphics'
 
 gatcf=glob.glob(COMhafs+'/*.atcfunix')
