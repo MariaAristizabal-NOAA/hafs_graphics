@@ -42,7 +42,7 @@ from pathlib import Path
 
 import socket
 
-plt.switch_backend('agg')
+#plt.switch_backend('agg')
 
 def ZoomIndex(var,aln,alt):
    """ find indices of the lower-left corner and the upper-right corner 
@@ -68,7 +68,7 @@ def ZoomIndex(var,aln,alt):
    yindx=np.arange(min(yll,yur),max(yll,yur),1)
    
    return (xindx,yindx)
-    
+
 #================================================================
 model =sys.argv[1]
 storm = sys.argv[2]
@@ -121,11 +121,18 @@ if tcid[-1].lower()=='l' or tcid[-1].lower()=='e':
     aln=[-1*a + 360. for a in aln]
 
 #afiles = sorted(glob.glob(os.path.join(COMOUT,nprefix+'phyf*.nc')))
-afiles = sorted(glob.glob(os.path.join(COMOUT,'*'+model.lower()+'prs.synoptic*.grb2')))
+if model.lower()=='hafs':
+   afiles = sorted(glob.glob(os.path.join(COMOUT,'*'+model.lower()+'prs.synoptic*.grb2')))
+if model.lower()=='hwrf':
+   #afiles = sorted(glob.glob(os.path.join(COMOUT,'*'+model.lower()+'prs.synoptic.*.grb2')))
+   afiles = sorted(glob.glob(os.path.join(COMOUT,'*'+model.lower()+'prs.storm.*.grb2')))
+if model.lower()=='hmon':
+   afiles = sorted(glob.glob(os.path.join(COMOUT,'*'+model.lower()+'prs.d2.*.grb2')))
+
 afiles=afiles[::2]   # subset to 6 hourly intervals
 flxvar=':(LHTFL|SHTFL):surface:'
 for k,A in enumerate(afiles):
-    fhr=int(A.partition('.0p03.')[-1][1:4])
+    fhr=int(A.partition('.grb2')[0][-3:])
     if fhr==0:
       xvars=flxvar+'anl:'
     else:
@@ -136,22 +143,30 @@ for k,A in enumerate(afiles):
     os.system(cmd)
 
 nfiles=sorted(glob.glob(os.path.join(nctmp,'heatflx_*.nc')))
+#xnc=xr.open_mfdataset(nfiles)
 
-xnc=xr.open_mfdataset(nfiles)
-xii,yii=ZoomIndex(xnc.isel(time=[0]),aln,alt)
-xindx=xii[::2]
-yindx=yii[::2]
-
-var1=xnc['LHTFL_surface'].isel(longitude=xindx,latitude=yindx)
-var2=xnc['SHTFL_surface'].isel(longitude=xindx,latitude=yindx)
-
-del nfiles
-del xnc
-
-lns,lts=np.meshgrid(var1['longitude'],var1['latitude'])
-dummy=np.ones(lns.shape)
+#if model.lower()=='hafs':
+#  xii,yii=ZoomIndex(xnc.isel(time=[0]),aln,alt)
+#  xindx=xii[::2]
+#  yindx=yii[::2]
+#
+#  var1=xnc['LHTFL_surface'].isel(longitude=xindx,latitude=yindx)
+#  var2=xnc['SHTFL_surface'].isel(longitude=xindx,latitude=yindx)
+#else:
+#  var1=xnc['LHTFL_surface']
+#  var2=xnc['SHTFL_surface']
+#
+#del nfiles
+#del xnc
 
 for k in range(min(len(aln),len(afiles))):
+   fnc=xr.open_dataset(nfiles[k])
+   var1=np.squeeze(fnc['LHTFL_surface'])
+   var2=np.squeeze(fnc['SHTFL_surface'])
+
+   lns,lts=np.meshgrid(var1['longitude'],var1['latitude'])
+   dummy=np.ones(lns.shape)
+
    dR=haversine(lns,lts,aln[k],alt[k])/1000.0
    dumb=dummy.copy()
    dumb[dR>Rkm]=np.nan
@@ -159,87 +174,45 @@ for k in range(min(len(aln),len(afiles))):
    fhr=k*6
    
    #--- latent heat flux 
-   fig=plt.figure(figsize=(14,5))
-   plt.suptitle(storm.upper()+tcid.upper()+'  '+'Ver Hr '+"%03d"%(fhr)+'  (IC='+cycle+'):  Latent Heat Flux & Change [W/m$^2$]',fontsize=15)
-   plt.subplot(121)
-   (var1[k]*dumb).plot.contourf(levels=np.arange(0,850,50),cmap='RdBu_r')
+   fig=plt.figure(figsize=(19,5))
+   plt.suptitle(model.upper()+': '+storm.upper()+tcid.upper()+'  '+'Ver Hr '+"%03d"%(fhr)+'  (IC='+cycle+'):  Heat Flux [W/m$^2$]',fontsize=15)
+   plt.subplot(131)
+   (var1*dumb).plot.contourf(levels=np.arange(0,850,50),cmap='RdBu_r')
    plt.plot(cx,cy,color='gray')
    if trackon[0].lower()=='y':
         plt.plot(aln,alt,'-ok',linewidth=3,alpha=0.6,markersize=2)
         plt.plot(aln[k],alt[k],'ok',markerfacecolor='none',markersize=10,alpha=0.6)
-   mnmx="(min,max)="+"(%6.1f"%np.nanmax(var1[k]*dumb)+","+"%6.1f)"%np.nanmin(var1[k]*dumb)
+   mnmx="(min,max)="+"(%6.1f"%np.nanmax(var1*dumb)+","+"%6.1f)"%np.nanmin(var1*dumb)
+   plt.text(aln[k]-5.2,alt[k]+4.3,'(A) Latent',fontsize=14,fontweight='bold')
    plt.text(aln[k]-4.25,alt[k]-4.75,mnmx,fontsize=14,color='DarkOliveGreen',fontweight='bold')
    plt.axis([aln[k]-5.5,aln[k]+5.5,alt[k]-5,alt[k]+5])
 
-   plt.subplot(122)
-   dvar=(var1[k]-var1[0])*dumb
-   dvar.plot.contourf(levels=np.arange(-500,550,50),cmap='bwr')
-   plt.plot(cx,cy,color='gray')
-   if trackon[0].lower()=='y':
-        plt.plot(aln,alt,'-ok',linewidth=3,alpha=0.6,markersize=2)
-        plt.plot(aln[k],alt[k],'ok',markerfacecolor='none',markersize=10,alpha=0.6)
-   mnmx="(min,max)="+"(%6.1f"%np.nanmax(dvar)+","+"%6.1f)"%np.nanmin(dvar)
-   plt.text(aln[k]-4.25,alt[k]-4.75,mnmx,fontsize=14,color='DarkOliveGreen',fontweight='bold')
-   plt.axis([aln[k]-5.5,aln[k]+5.5,alt[k]-5,alt[k]+5])
-
-   pngFile=os.path.join(graphdir,aprefix.upper()+'.'+model.upper()+'.storm.LHTFlux.f'+"%03d"%(fhr)+'.png')
-   plt.savefig(pngFile,bbox_inches='tight')
-
-   plt.close('all')
+   plt.subplot(132)
    #--- sensible heat flux
-   fig=plt.figure(figsize=(14,5))
-   plt.suptitle(storm.upper()+tcid.upper()+'  '+'Ver Hr '+"%03d"%(fhr)+'  (IC='+cycle+'): Sensible Heat Flux & Change [W/m$^2$]',fontsize=15)
-   plt.subplot(121)
-   (var2[k]*dumb).plot.contourf(levels=np.arange(-50,275,25),cmap='RdBu_r')
+   (var2*dumb).plot.contourf(levels=np.arange(-50,275,25),cmap='RdBu_r')
    plt.plot(cx,cy,color='gray')
    if trackon[0].lower()=='y':
         plt.plot(aln,alt,'-ok',linewidth=3,alpha=0.6,markersize=2)
         plt.plot(aln[k],alt[k],'ok',markerfacecolor='none',markersize=10,alpha=0.6)
-   mnmx="(min,max)="+"(%6.1f"%np.nanmax(var2[k]*dumb)+","+"%6.1f)"%np.nanmin(var2[k]*dumb)
+   mnmx="(min,max)="+"(%6.1f"%np.nanmax(var2*dumb)+","+"%6.1f)"%np.nanmin(var2*dumb)
+   plt.text(aln[k]-5.2,alt[k]+4.3,'(B) Sensible',fontsize=14,fontweight='bold')
    plt.text(aln[k]-4.25,alt[k]-4.75,mnmx,fontsize=14,color='r',fontweight='bold')
    plt.axis([aln[k]-5.5,aln[k]+5.5,alt[k]-5,alt[k]+5])
 
-   plt.subplot(122)
-   dvar=(var2[k]-var2[0])*dumb
-   dvar.plot.contourf(levels=np.arange(-200,225,25),cmap='bwr')
-   plt.plot(cx,cy,color='gray')
-   if trackon[0].lower()=='y':
-        plt.plot(aln,alt,'-ok',linewidth=3,alpha=0.6,markersize=2)
-        plt.plot(aln[k],alt[k],'ok',markerfacecolor='none',markersize=10,alpha=0.6)
-   mnmx="(min,max)="+"(%6.1f"%np.nanmax(dvar)+","+"%6.1f)"%np.nanmin(dvar)
-   plt.text(aln[k]-4.25,alt[k]-4.75,mnmx,fontsize=14,color='DarkOliveGreen',fontweight='bold')
-   plt.axis([aln[k]-5.5,aln[k]+5.5,alt[k]-5,alt[k]+5])
-
-   pngFile=os.path.join(graphdir,aprefix.upper()+'.'+model.upper()+'.storm.SHTFlux.f'+"%03d"%(fhr)+'.png')
-   plt.savefig(pngFile,bbox_inches='tight')
-
-   plt.close('all')
    # --- total heat flux
-   fig=plt.figure(figsize=(14,5))
-   plt.suptitle(storm.upper()+tcid.upper()+'  '+'Ver Hr '+"%03d"%(fhr)+'  (IC='+cycle+'): Turbulence Heat Flux & Change [W/m$^2$]',fontsize=15)
-   plt.subplot(121)
-   var0=var1[k]+var2[k]
+   plt.subplot(133)
+   var0=var1+var2
    (var0*dumb).plot.contourf(levels=np.arange(0,1150,50),cmap='RdBu_r')
    plt.plot(cx,cy,color='gray')
    if trackon[0].lower()=='y':
         plt.plot(aln,alt,'-ok',linewidth=3,alpha=0.6,markersize=2)
         plt.plot(aln[k],alt[k],'ok',markerfacecolor='none',markersize=10,alpha=0.6)
    mnmx="(min,max)="+"(%6.1f"%np.nanmax(var0*dumb)+","+"%6.1f)"%np.nanmin(var0*dumb)
+   plt.text(aln[k]-5.2,alt[k]+4.3,'(C) (A)+(B)',fontsize=14,fontweight='bold')
    plt.text(aln[k]-4.25,alt[k]-4.75,mnmx,fontsize=14,color='DarkOliveGreen',fontweight='bold')
    plt.axis([aln[k]-5.5,aln[k]+5.5,alt[k]-5,alt[k]+5])
 
-   plt.subplot(122)
-   dvar=(var0-var1[0]-var2[0])*dumb
-   dvar.plot.contourf(levels=np.arange(-100,1150,50),cmap='bwr')
-   plt.plot(cx,cy,color='gray')
-   if trackon[0].lower()=='y':
-        plt.plot(aln,alt,'-ok',linewidth=3,alpha=0.6,markersize=2)
-        plt.plot(aln[k],alt[k],'ok',markerfacecolor='none',markersize=10,alpha=0.6)
-   mnmx="(min,max)="+"(%6.1f"%np.nanmax(dvar)+","+"%6.1f)"%np.nanmin(dvar)
-   plt.text(aln[k]-4.25,alt[k]-4.75,mnmx,fontsize=14,color='DarkOliveGreen',fontweight='bold')
-   plt.axis([aln[k]-5.5,aln[k]+5.5,alt[k]-5,alt[k]+5])
-
-   pngFile=os.path.join(graphdir,aprefix.upper()+'.'+model.upper()+'.storm.totalHeatFlux.f'+"%03d"%(fhr)+'.png')
+   pngFile=os.path.join(graphdir,aprefix.upper()+'.'+model.upper()+'.storm.HeatFlux.f'+"%03d"%(fhr)+'.png')
    plt.savefig(pngFile,bbox_inches='tight')
 
    plt.close('all')
