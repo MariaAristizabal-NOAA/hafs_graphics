@@ -1,0 +1,10 @@
+# yaml configure file
+stormModel: HFSA
+stormName: LAURA
+stormID: 13L
+stormBasin: AL
+ymdh: '2020082512'
+fhhh: f003
+trackon: 'yes'
+COMhafs: /scratch1/NCEPDEV/hwrf/scrub/Maria.Aristizabal/hafsv1_merge_mom6_hfsa_mom6/com/2020082512/13L
+cartopyDataDir: /scratch1/NCEPDEV/hwrf/noscrub/local/share/cartopy
