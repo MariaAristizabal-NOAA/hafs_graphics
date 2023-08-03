@@ -129,8 +129,8 @@ cp = 3985 #Heat capacity in J/(kg K)
 no26 = temp < 26
 temp[no26] = np.nan
 salt[no26] = np.nan
-dens = dens(salt,temp,zl_array)
-rho0 = np.nanmean(dens,axis=0)
+density = dens(salt,temp,zl_array)
+rho0 = np.nanmean(density,axis=0)
 zl_array_fac = (zl_array[0:-1,:,:] + zl_array[1:,:,:])/2
 zero_array = np.zeros((1,temp.shape[1],temp.shape[2]))
 bott_array = np.ones((1,temp.shape[1],temp.shape[2]))* zl_array_fac[-1,0,0] + (zl[-1] - zl[-2])
