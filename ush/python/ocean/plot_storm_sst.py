@@ -205,7 +205,7 @@ if lat_adeck[nhour] < (latmax+5.0):
     
     pngFile = conf['stormName'].upper()+conf['stormID'].upper()+'.'+conf['ymdh']+'.'+conf['stormModel']+'.ocean.storm.'+var_name+'.'+conf['fhhh'].lower()+'.png'
     plt.savefig(pngFile,bbox_inches='tight',dpi=150)
-    #plt.close("all")
+    plt.close("all")
     
     # create figure and axes instances
     fig = plt.figure(figsize=(6,6))
@@ -257,4 +257,4 @@ if lat_adeck[nhour] < (latmax+5.0):
     
     pngFile = conf['stormName'].upper()+conf['stormID'].upper()+'.'+conf['ymdh']+'.'+conf['stormModel']+'.ocean.storm.'+var_name+'.change.'+conf['fhhh'].lower()+'.png'
     plt.savefig(pngFile,bbox_inches='tight',dpi=150)
-    #plt.close("all")
+    plt.close("all")
