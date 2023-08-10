@@ -2,26 +2,17 @@
 
 """ This script is to plot out HAFS atmospheric azimuthally averaged fields figures."""
 import os
-import sys
-import logging
-import math
-import datetime
 
 import yaml
 import numpy as np
 import pandas as pd
-from numpy import newaxis
-from scipy.ndimage import gaussian_filter
 from scipy import interpolate
 
 import grib2io
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.path as mpath
-import matplotlib.colors as colors
 import matplotlib.ticker as mticker
-from matplotlib.gridspec import GridSpec
 
 def axes_radpres(ax, xmax, xmin, ymax=1000, ymin=100):
     """Set up common axes attributes for wavenumber graphics.
@@ -45,12 +36,12 @@ def axes_radpres(ax, xmax, xmin, ymax=1000, ymin=100):
     return ax
 
 # Input parameters for this script
-resolution=0.02*111     # 0.02 is the resolution of MOVING NEST GRIB2 data
-rmax=400.0              # Range of radius (km) that will be plotted
-xsize=1001              # X-dim size of MOVING NEST GRIB2 data
-ysize=801               # Y-dim size of MOVING NEST GRIB2 data
-zsize=45                # Z-dim size (pressure level) of MOVING NEST GRIB2 data
-levs=[1000, 975, 950, 925, 900, 875, 850, 825, 800, 775, 750, 725, 700, 675, 650, 625, 600, 575, 550, 525, 500, 475,
+resolution = 0.02*111     # 0.02 is the resolution of MOVING NEST GRIB2 data
+rmax = 400.0              # Range of radius (km) that will be plotted
+xsize = 1001              # X-dim size of MOVING NEST GRIB2 data
+ysize = 801               # Y-dim size of MOVING NEST GRIB2 data
+zsize = 45                # Z-dim size (pressure level) of MOVING NEST GRIB2 data
+levs = [1000, 975, 950, 925, 900, 875, 850, 825, 800, 775, 750, 725, 700, 675, 650, 625, 600, 575, 550, 525, 500, 475,
          450, 425, 400, 375, 350, 325, 300, 275, 250, 225, 200, 175, 150, 125, 100, 70, 50, 30, 20, 10, 7, 5, 2]
 
 print('Parse the config file: plot_atmos.yml:')
@@ -69,16 +60,16 @@ trackfile = os.path.join(conf['COMhafs'], atcftrack)
 track=open(trackfile,'r')
 print('ATCF track file',atcftrack)
 tracklist=track.readlines()
-cen_lon=[]
-cen_lat=[]
+cen_lon = []
+cen_lat = []
 for i in range(len(tracklist)):
     tracklist[i]=tracklist[i].strip()
-    data=tracklist[i].split(',')
+    data = tracklist[i].split(',')
     if int(data[5]) == int(fhour):
-        latc=data[6]
-        lonc=data[7]
-        cen_lat=int(latc[:-1])/10
-        cen_lon=int(lonc[:-1])/10
+        latc = data[6]
+        lonc = data[7]
+        cen_lat = int(latc[:-1])/10
+        cen_lon = int(lonc[:-1])/10
         if lonc[-1] == "W":
             cen_lon=-1.0*cen_lon
         if latc[-1] == "S":
@@ -100,10 +91,10 @@ for i in range(ysize):
 lonp = []
 for i in range(xsize):
     lonp.append(0.0)
-tprs= np.asarray(tprs)
-tano= np.asarray(tano)
-latp= np.asarray(latp)
-lonp= np.asarray(lonp)
+tprs = np.asarray(tprs)
+tano = np.asarray(tano)
+latp = np.asarray(latp)
+lonp = np.asarray(lonp)
 
 # Read variables from GRIB2 file
 fname = conf['stormID'].lower()+'.'+conf['ymdh']+'.'+conf['stormModel'].lower()+'.'+conf['stormDomain']+'.atm.'+conf['fhhh']+'.grb2'
@@ -112,40 +103,39 @@ print(f'grib2file: {grib2file}')
 grb = grib2io.open(grib2file,mode='r')
 
 print('Extracting NLAT')
-lat = grb.select(shortName='NLAT')[0].data()
-lat=np.asarray(lat[::-1,:])
+lat = grb.select(shortName='NLAT')[0].data
+lat = np.asarray(lat[::-1,:])
 for i in range(ysize):
     for j in range(xsize):
         latp[(ysize-1)-i]=lat[i,j]
 
 print('Extracting ELON')
-lon = grb.select(shortName='ELON')[0].data()
+lon = grb.select(shortName='ELON')[0].data
 lon=np.asarray(lon[::-1,:])
 for i in range(ysize):
     for j in range(xsize):
         if lonc[-1] == "W":
             lonp[j]=lon[i,j]-360.0
         if lonc[-1] == "E":
-            lonp[j]=lon[i,j]
+            lonp[j] = lon[i,j]
 
 # Put variables into 3-d array, index i is for y-dim, index j is for x-dim
 for k in range(zsize):
-    levstr=str(levs[k])+' mb'
-    tmp = grb.select(shortName='TMP', level=levstr)[0].data()
-    tmp.data[tmp.mask] = np.nan
+    levstr = str(levs[k])+' mb'
+    tmp = grb.select(shortName='TMP', level=levstr)[0].data
     tmp[tmp<0.] = np.nan
-    tmp= np.asarray(tmp)
+    tmp = np.asarray(tmp)
     print('Reading TMP for level',k,levs[k])
     for i in range(ysize):
         for j in range(xsize):
-            tprs[i,j,k]=tmp[i,j]
+            tprs[i,j,k] = tmp[i,j]
     print('Calculating T anomaly for level',k,levs[k])
     tmp_mean = np.nanmean(tmp)
     tmp_anomaly = tmp - tmp_mean
     tmp_anomaly = np.asarray(tmp_anomaly)
     for i in range(ysize):
         for j in range(xsize):
-            tano[i,j,k]=tmp_anomaly[i,j]
+            tano[i,j,k] = tmp_anomaly[i,j]
 
 # Get pressure levels
 zlevs = levs[:]
