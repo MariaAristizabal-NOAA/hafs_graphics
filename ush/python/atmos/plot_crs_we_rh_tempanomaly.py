@@ -3,10 +3,6 @@
 """This script is to plot out HAFS atmospheric East-West cross section from 1000-100mb at model's storm center (ATCF)."""
 
 import os
-import sys
-import logging
-import math
-import datetime
 
 import yaml
 import numpy as np
@@ -14,25 +10,16 @@ import pandas as pd
 from scipy.ndimage import gaussian_filter
 
 import grib2io
-from netCDF4 import Dataset
 
 import matplotlib
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.path as mpath
 import matplotlib.ticker as mticker
-from matplotlib.gridspec import GridSpec
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import pyproj
 import cartopy
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-from cartopy.mpl.ticker import (LongitudeLocator, LongitudeFormatter, LongitudeLocator, LongitudeFormatter)
 
-import metpy.calc as mpcalc
 import metpy
+import metpy.calc as mpcalc
 
 # Parse the yaml config file
 print('Parse the config file: plot_atmos.yml:')
@@ -58,7 +45,7 @@ atcffile = os.path.join(conf['COMhafs'], atcffname)
 print(f'ATCFfile: {atcffile}')
 df = pd.read_csv(atcffile,header=None)
 
-tmp1=np.arange(0,df.shape[0])
+tmp1 = np.arange(0,df.shape[0])
 print(conf['fhour'])
 
 for tind in tmp1:
@@ -77,8 +64,8 @@ def latlon_str2num(string): #Adopted from ATCF
     else:
       return -value
 
-clat= latlon_str2num(df.loc[tind][6])
-clon= latlon_str2num(df.loc[tind][7])
+clat = latlon_str2num(df.loc[tind][6])
+clon = latlon_str2num(df.loc[tind][7])
 if clon < 0 :
    clon = clon + 360
 
@@ -93,35 +80,32 @@ def find_nearest(pointx, pointy, gridx, gridy):
 
 print('Extracting lat, lon')
 
-lat = np.asarray(grb.select(shortName='NLAT')[0].data())
-lon = np.asarray(grb.select(shortName='ELON')[0].data())
+lat = grb.select(shortName='NLAT')[0].data
+lon = grb.select(shortName='ELON')[0].data
 [nlat, nlon] = np.shape(lon)
 
 grblevs=np.arange(100,1001,25)
-fcor=metpy.calc.coriolis_parameter(np.deg2rad(lat))
+fcor = np.asarray(metpy.calc.coriolis_parameter(np.deg2rad(lat)))
 
 print('extract levs='+str(grblevs))
 for ind, lv in enumerate(grblevs):
-  levstr= str(lv)+' mb'
+  levstr = str(lv)+' mb'
   print('Extracting data at '+levstr)
-  rh = grb.select(shortName='RH', level=levstr)[0].data()
-  rh.data[rh.mask] = np.nan
+  rh = grb.select(shortName='RH', level=levstr)[0].data
   rh[rh<0.] = np.nan
-  rh = np.asarray(rh)
   if ind == 0:
-    rhtmp=np.zeros((len(grblevs),rh.shape[0],rh.shape[1]))
-    rhtmp[ind,:,:]=rh
-  rhtmp[ind,:,:]=rh
+    rhtmp = np.zeros((len(grblevs),rh.shape[0],rh.shape[1]))
+    rhtmp[ind,:,:] = rh
+  rhtmp[ind,:,:] = rh
 
-  tmp = grb.select(shortName='TMP', level=levstr)[0].data()
-  tmp.data[tmp.mask] = np.nan
+  tmp = grb.select(shortName='TMP', level=levstr)[0].data
   tmp[tmp<0.] = np.nan
   if ind == 0:
-    tmp_anomaly=np.zeros((len(grblevs),tmp.shape[0],tmp.shape[1]))                            
-    ptmp=np.zeros((len(grblevs),tmp.shape[0],tmp.shape[1]))
+    tmp_anomaly = np.zeros((len(grblevs),tmp.shape[0],tmp.shape[1]))                            
+    ptmp = np.zeros((len(grblevs),tmp.shape[0],tmp.shape[1]))
   ptmp[ind,:,:] = tmp*np.power((1000/lv),0.286)
   tmp_mean = np.nanmean(tmp)
-  tmp_anomaly[ind,:,:] = tmp - tmp_mean
+  tmp_anomaly[ind,:,:] = tmp-tmp_mean
 
 tmp_anomaly = gaussian_filter(tmp_anomaly,1)
 
