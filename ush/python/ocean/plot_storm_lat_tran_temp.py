@@ -1,20 +1,6 @@
-#%% User input
+#!/usr/bin/env python3
 
-# forecasting cycle to be used
-
-# Lee 13L
-stormModel: 'HFSA'
-stormName: 'LEE'
-stormID: '13L'
-stormBasin: 'AL'
-ymdh: '2023090706'
-fhhh: 'f003'
-trackon: 'yes'
-COMhafs: '/scratch1/NCEPDEV/hwrf/noscrub/Maria.Aristizabal/HFSAv1p1/2023090706/13l'
-cartopyDataDir: '/scratch1/NCEPDEV/hwrf/noscrub/local/share/cartopy'
-
-
-"""This scrip plots the sea surface temperature for an area 500 km around the storm eye. """
+"""This scrip plots a latitudinal transect of temperature. """
 
 import os
 import sys
@@ -94,10 +80,6 @@ ncfile003 = os.path.join(conf['COMhafs'], fname003)
 nc003 = xr.open_dataset(ncfile003)
 ncfile = os.path.join(conf['COMhafs'], fname)
 nc = xr.open_dataset(ncfile)
-
-#varr003 = np.asarray(nc003['SST'][0,:,:])
-#varr = np.asarray(nc['SST'][0,:,:])
-#zl = np.asarray(nc['z_l'])
 
 lon = np.asarray(nc.xh)
 lat = np.asarray(nc.yh)
